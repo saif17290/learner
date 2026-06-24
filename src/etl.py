@@ -50,25 +50,26 @@ def load(df: pd.DataFrame, output_csv: str = 'data/processed/orders_clean.csv', 
     os.makedirs(os.path.dirname(db_path), exist_ok=True)
     df.to_csv(output_csv, index=False)
 
-    # write to SQLite, replacing table
-    conn = sqlite3.connect(db_path)
-    cur = conn.cursor()
-    cur.execute('DROP TABLE IF EXISTS orders_clean')
-    cur.execute(
-        'CREATE TABLE orders_clean(order_id INTEGER PRIMARY KEY, order_date TEXT, product TEXT, quantity INTEGER, unit_price REAL, revenue REAL)'
-    )
-    insert_sql = 'INSERT INTO orders_clean(order_id, order_date, product, quantity, unit_price, revenue) VALUES (?, ?, ?, ?, ?, ?)'
-    rows = [(
-        int(r['order_id']),
-        str(r['order_date']),
-        str(r['product']),
-        int(r['quantity']),
-        float(r['unit_price']),
-        float(r['revenue']),
-    ) for _, r in df.iterrows()]
-    cur.executemany(insert_sql, rows)
-    conn.commit()
-    conn.close()
+    # write to SQLite, replacing table (use shared DB helper)
+    from .db import get_connection
+
+    with get_connection(db_path) as conn:
+        cur = conn.cursor()
+        cur.execute('DROP TABLE IF EXISTS orders_clean')
+        cur.execute(
+            'CREATE TABLE orders_clean(order_id INTEGER PRIMARY KEY, order_date TEXT, product TEXT, quantity INTEGER, unit_price REAL, revenue REAL)'
+        )
+        insert_sql = 'INSERT INTO orders_clean(order_id, order_date, product, quantity, unit_price, revenue) VALUES (?, ?, ?, ?, ?, ?)'
+        rows = [(
+            int(r['order_id']),
+            str(r['order_date']),
+            str(r['product']),
+            int(r['quantity']),
+            float(r['unit_price']),
+            float(r['revenue']),
+        ) for _, r in df.iterrows()]
+        cur.executemany(insert_sql, rows)
+        conn.commit()
 
 
 def run(raw_path: str = 'data/raw/orders.csv', processed_path: str = 'data/processed/orders_clean.csv', db_path: str = 'db/orders.db') -> None:

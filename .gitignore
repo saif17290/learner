@@ -3,6 +3,7 @@ __pycache__/
 data/raw/
 data/processed/
 db/*.db
+retail-mini-etl/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
